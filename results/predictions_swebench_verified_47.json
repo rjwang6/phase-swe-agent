@@ -1,0 +1,237 @@
+{
+  "astropy__astropy-6938": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "astropy__astropy-6938",
+    "model_patch": "diff --git a/astropy/io/fits/fitsrec.py b/astropy/io/fits/fitsrec.py\nindex 574b4073b1..8890e158e2 100644\n--- a/astropy/io/fits/fitsrec.py\n+++ b/astropy/io/fits/fitsrec.py\n@@ -1261,7 +1261,7 @@ class FITS_rec(np.recarray):\n \n         # Replace exponent separator in floating point numbers\n         if 'D' in format:\n-            output_field.replace(encode_ascii('E'), encode_ascii('D'))\n+            output_field[:] = output_field.replace(encode_ascii('E'), encode_ascii('D'))\n \n \n def _get_recarray_field(array, key):\n"
+  },
+  "django__django-10914": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-10914",
+    "model_patch": "diff --git a/django/conf/global_settings.py b/django/conf/global_settings.py\nindex acee9887d2..bdeec80610 100644\n--- a/django/conf/global_settings.py\n+++ b/django/conf/global_settings.py\n@@ -304,7 +304,7 @@ FILE_UPLOAD_TEMP_DIR = None\n \n # The numeric mode to set newly-uploaded files to. The value should be a mode\n # you'd pass directly to os.chmod; see https://docs.python.org/library/os.html#files-and-directories.\n-FILE_UPLOAD_PERMISSIONS = None\n+FILE_UPLOAD_PERMISSIONS = 0o644\n \n # The numeric mode to assign to newly-created directories, when uploading files.\n # The value should be a mode as you'd pass to os.chmod;\n"
+  },
+  "django__django-11001": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11001",
+    "model_patch": "diff --git a/django/db/models/sql/compiler.py b/django/db/models/sql/compiler.py\nindex 7649c39262..57150f96dc 100644\n--- a/django/db/models/sql/compiler.py\n+++ b/django/db/models/sql/compiler.py\n@@ -32,7 +32,7 @@ class SQLCompiler:\n         self.select = None\n         self.annotation_col_map = None\n         self.klass_info = None\n-        self.ordering_parts = re.compile(r'(.*)\\s(ASC|DESC)(.*)')\n+        self.ordering_parts = re.compile(r'(.*)\\s(ASC|DESC)(.*)', re.DOTALL)\n         self._meta_ordering = None\n \n     def setup_query(self):\n"
+  },
+  "django__django-11099": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11099",
+    "model_patch": "diff --git a/django/contrib/auth/validators.py b/django/contrib/auth/validators.py\nindex b4878cfd45..1304f20a60 100644\n--- a/django/contrib/auth/validators.py\n+++ b/django/contrib/auth/validators.py\n@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _\n \n @deconstructible\n class ASCIIUsernameValidator(validators.RegexValidator):\n-    regex = r'^[\\w.@+-]+$'\n+    regex = r'\\A[\\w.@+-]+\\Z'\n     message = _(\n         'Enter a valid username. This value may contain only English letters, '\n         'numbers, and @/./+/-/_ characters.'\n@@ -17,7 +17,7 @@ class ASCIIUsernameValidator(validators.RegexValidator):\n \n @deconstructible\n class UnicodeUsernameValidator(validators.RegexValidator):\n-    regex = r'^[\\w.@+-]+$'\n+    regex = r'\\A[\\w.@+-]+\\Z'\n     message = _(\n         'Enter a valid username. This value may contain only letters, '\n         'numbers, and @/./+/-/_ characters.'\n"
+  },
+  "django__django-11179": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11179",
+    "model_patch": "diff --git a/django/db/models/deletion.py b/django/db/models/deletion.py\nindex 92fe4affb9..907cf93622 100644\n--- a/django/db/models/deletion.py\n+++ b/django/db/models/deletion.py\n@@ -277,8 +277,8 @@ class Collector:\n             if self.can_fast_delete(instance):\n                 with transaction.mark_for_rollback_on_error():\n                     count = sql.DeleteQuery(model).delete_batch([instance.pk], self.using)\n+                setattr(instance, model._meta.pk.attname, None)\n                 return count, {model._meta.label: count}\n-\n         with transaction.atomic(using=self.using, savepoint=False):\n             # send pre_delete signals\n             for model, obj in self.instances_with_model():\n"
+  },
+  "astropy__astropy-14182": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "astropy__astropy-14182",
+    "model_patch": "diff --git a/astropy/io/ascii/rst.py b/astropy/io/ascii/rst.py\nindex abdeba8ef..4a04bc706 100644\n--- a/astropy/io/ascii/rst.py\n+++ b/astropy/io/ascii/rst.py\n@@ -57,10 +57,10 @@ class RST(FixedWidth):\n     data_class = SimpleRSTData\n     header_class = SimpleRSTHeader\n \n-    def __init__(self):\n-        super().__init__(delimiter_pad=None, bookend=False)\n+    def __init__(self, header_rows=None, **kwargs):\n+        super().__init__(delimiter_pad=None, bookend=False, header_rows=header_rows, **kwargs)\n \n     def write(self, lines):\n         lines = super().write(lines)\n-        lines = [lines[1]] + lines + [lines[1]]\n+        lines = [lines[0]] + lines + [lines[0]]\n         return lines\n"
+  },
+  "django__django-11283": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11283",
+    "model_patch": "diff --git a/django/contrib/auth/migrations/0011_update_proxy_permissions.py b/django/contrib/auth/migrations/0011_update_proxy_permissions.py\nindex 0e66649695..3986fc3f1b 100644\n--- a/django/contrib/auth/migrations/0011_update_proxy_permissions.py\n+++ b/django/contrib/auth/migrations/0011_update_proxy_permissions.py\n@@ -24,6 +24,18 @@ def update_proxy_model_permissions(apps, schema_editor, reverse=False):\n         proxy_content_type = ContentType.objects.get_for_model(Model, for_concrete_model=False)\n         old_content_type = proxy_content_type if reverse else concrete_content_type\n         new_content_type = concrete_content_type if reverse else proxy_content_type\n+        \n+        # Delete permissions that already exist for the new_content_type\n+        # to avoid IntegrityError during the bulk update.\n+        duplicate_permission_codenames = Permission.objects.filter(\n+            permissions_query,\n+            content_type=new_content_type,\n+        ).values_list('codename', flat=True)\n+        Permission.objects.filter(\n+            content_type=old_content_type,\n+            codename__in=duplicate_permission_codenames,\n+        ).delete()\n+\n         Permission.objects.filter(\n             permissions_query,\n             content_type=old_content_type,\n"
+  },
+  "django__django-11848": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11848",
+    "model_patch": "diff --git a/django/utils/http.py b/django/utils/http.py\nindex 572cfb4347..0887f2d360 100644\n--- a/django/utils/http.py\n+++ b/django/utils/http.py\n@@ -176,10 +176,10 @@ def parse_http_date(date):\n     try:\n         year = int(m.group('year'))\n         if year < 100:\n-            if year < 70:\n-                year += 2000\n-            else:\n-                year += 1900\n+            current_year = datetime.datetime.utcnow().year\n+            year += (current_year // 100) * 100\n+            if year - current_year > 50:\n+                year -= 100\n         month = MONTHS.index(m.group('mon').lower()) + 1\n         day = int(m.group('day'))\n         hour = int(m.group('hour'))\n"
+  },
+  "django__django-10924": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-10924",
+    "model_patch": "diff --git a/django/db/models/fields/__init__.py b/django/db/models/fields/__init__.py\nindex 0c64748ccd..4d7eb11151 100644\n--- a/django/db/models/fields/__init__.py\n+++ b/django/db/models/fields/__init__.py\n@@ -1709,7 +1709,7 @@ class FilePathField(Field):\n \n     def formfield(self, **kwargs):\n         return super().formfield(**{\n-            'path': self.path,\n+            'path': self.path() if callable(self.path) else self.path,\n             'match': self.match,\n             'recursive': self.recursive,\n             'form_class': forms.FilePathField,\ndiff --git a/django/forms/fields.py b/django/forms/fields.py\nindex a977256525..3c50b3d7f0 100644\n--- a/django/forms/fields.py\n+++ b/django/forms/fields.py\n@@ -1079,6 +1079,8 @@ class FilePathField(ChoiceField):\n     def __init__(self, path, *, match=None, recursive=False, allow_files=True,\n                  allow_folders=False, **kwargs):\n         self.path, self.match, self.recursive = path, match, recursive\n+        if callable(self.path):\n+            self.path = self.path()\n         self.allow_files, self.allow_folders = allow_files, allow_folders\n         super().__init__(choices=(), **kwargs)\n \n"
+  },
+  "astropy__astropy-7746": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "astropy__astropy-7746",
+    "model_patch": "diff --git a/astropy/wcs/wcs.py b/astropy/wcs/wcs.py\nindex d3a06f2b31..536f7617ad 100644\n--- a/astropy/wcs/wcs.py\n+++ b/astropy/wcs/wcs.py\n@@ -1253,8 +1253,9 @@ reduce these to 2 dimensions using the naxis kwarg.\n                     \"(coords[N][{0}], origin)\".format(self.naxis))\n             if self.naxis == 1 and len(xy.shape) == 1:\n                 return _return_list_of_arrays([xy], origin)\n+            if xy.shape[0] == 0:\n+                return np.zeros((0, self.naxis))\n             return _return_single_array(xy, origin)\n-\n         elif len(args) == self.naxis + 1:\n             axes = args[:-1]\n             origin = args[-1]\n@@ -1266,6 +1267,8 @@ reduce these to 2 dimensions using the naxis kwarg.\n                     \"When providing more than two arguments, they must be \" +\n                     \"a 1-D array for each axis, followed by an origin.\")\n \n+            if len(axes) > 0 and len(axes[0]) == 0:\n+                return [np.array([], float) for i in range(self.naxis)]\n             return _return_list_of_arrays(axes, origin)\n \n         raise TypeError(\n"
+  },
+  "django__django-12184": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-12184",
+    "model_patch": "diff --git a/django/urls/resolvers.py b/django/urls/resolvers.py\nindex 17a2f34793..2021650968 100644\n--- a/django/urls/resolvers.py\n+++ b/django/urls/resolvers.py\n@@ -158,7 +158,7 @@ class RegexPattern(CheckURLMixin):\n             # If there are any named groups, use those as kwargs, ignoring\n             # non-named groups. Otherwise, pass all non-named arguments as\n             # positional arguments.\n             kwargs = {k: v for k, v in match.groupdict().items() if v is not None}\n-            args = () if kwargs else match.groups()\n+            args = () if self.regex.groupindex else match.groups()\n             return path[match.end():], args, kwargs\n         return None\n"
+  },
+  "django__django-12286": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-12286",
+    "model_patch": "diff --git a/django/core/checks/translation.py b/django/core/checks/translation.py\nindex 138ed07ff8..713875bebc 100644\n--- a/django/core/checks/translation.py\n+++ b/django/core/checks/translation.py\n@@ -1,4 +1,5 @@\n from django.conf import settings\n+from django.utils.translation import get_supported_language_variant\n from django.utils.translation.trans_real import language_code_re\n \n from . import Error, Tags, register\n@@ -55,7 +56,8 @@ def check_setting_languages_bidi(app_configs, **kwargs):\n @register(Tags.translation)\n def check_language_settings_consistent(app_configs, **kwargs):\n     \"\"\"Error if language settings are not consistent with each other.\"\"\"\n-    available_tags = {i for i, _ in settings.LANGUAGES} | {'en-us'}\n-    if settings.LANGUAGE_CODE not in available_tags:\n+    try:\n+        get_supported_language_variant(settings.LANGUAGE_CODE)\n+    except LookupError:\n         return [E004]\n     return []\n"
+  },
+  "django__django-12308": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-12308",
+    "model_patch": "diff --git a/django/contrib/admin/utils.py b/django/contrib/admin/utils.py\nindex e4ddc8f017..c126834fd4 100644\n--- a/django/contrib/admin/utils.py\n+++ b/django/contrib/admin/utils.py\n@@ -1,3 +1,4 @@\n+import json\n import datetime\n import decimal\n from collections import defaultdict\n@@ -398,6 +399,8 @@ def display_for_field(value, field, empty_value_display):\n         return formats.number_format(value)\n     elif isinstance(field, models.FileField) and value:\n         return format_html('<a href=\"{}\">{}</a>', value.url, value)\n+    elif isinstance(field, models.JSONField) and value is not None:\n+        return json.dumps(value, cls=field.encoder)\n     else:\n         return display_for_value(value, empty_value_display)\n \n"
+  },
+  "django__django-11999": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11999",
+    "model_patch": "diff --git a/django/db/models/fields/__init__.py b/django/db/models/fields/__init__.py\nindex ee45bb941e..96ccce72dd 100644\n--- a/django/db/models/fields/__init__.py\n+++ b/django/db/models/fields/__init__.py\n@@ -762,7 +762,7 @@ class Field(RegisterLookupMixin):\n             # such fields can't be deferred (we don't have a check for this).\n             if not getattr(cls, self.attname, None):\n                 setattr(cls, self.attname, self.descriptor_class(self))\n-        if self.choices is not None:\n+        if self.choices is not None and not hasattr(cls, 'get_%s_display' % self.name):\n             setattr(cls, 'get_%s_display' % self.name,\n                     partialmethod(cls._get_FIELD_display, field=self))\n \n"
+  },
+  "django__django-11742": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11742",
+    "model_patch": "diff --git a/django/db/models/fields/__init__.py b/django/db/models/fields/__init__.py\nindex 9ce46e3f73..4fc955f8a4 100644\n--- a/django/db/models/fields/__init__.py\n+++ b/django/db/models/fields/__init__.py\n@@ -209,6 +209,40 @@ class Field(RegisterLookupMixin):\n             *self._check_deprecation_details(),\n         ]\n \n+    def _check_choices_max_length(self):\n+        if self.max_length is None or not self.choices:\n+            return []\n+\n+        errors = []\n+        for choice in self.choices:\n+            if isinstance(choice, (list, tuple)) and len(choice) == 2:\n+                value, label = choice\n+                if isinstance(label, (list, tuple)):\n+                    # This is a choices group\n+                    for sub_choice in label:\n+                        if isinstance(sub_choice, (list, tuple)) and len(sub_choice) == 2:\n+                            sub_value, sub_label = sub_choice\n+                            if isinstance(sub_value, (str, bytes)) and len(sub_value) > self.max_length:\n+                                errors.append(\n+                                    checks.Error(\n+                                        \"'max_length' is too small to fit the longest value in 'choices' (%d characters).\" % len(sub_value),\n+                                        obj=self,\n+                                        id='fields.E009',\n+                                    )\n+                                )\n+                                break\n+                else:\n+                    if isinstance(value, (str, bytes)) and len(value) > self.max_length:\n+                        errors.append(\n+                            checks.Error(\n+                                \"'max_length' is too small to fit the longest value in 'choices' (%d characters).\" % len(value),\n+                                obj=self,\n+                                id='fields.E009',\n+                            )\n+                        )\n+                        break\n+        return errors\n+\n     def _check_field_name(self):\n         \"\"\"\n         Check if field name is valid, i.e. 1) does not end with an\n@@ -291,6 +325,7 @@ class Field(RegisterLookupMixin):\n             )\n         ]\n \n+\n     def _check_db_index(self):\n         if self.db_index not in (None, True, False):\n             return [\n@@ -955,6 +990,7 @@ class CharField(Field):\n         return [\n             *super().check(**kwargs),\n             *self._check_max_length_attribute(**kwargs),\n+            *self._check_choices_max_length(),\n         ]\n \n     def _check_max_length_attribute(self, **kwargs):\n@@ -2187,7 +2223,11 @@ class BinaryField(Field):\n             self.validators.append(validators.MaxLengthValidator(self.max_length))\n \n     def check(self, **kwargs):\n-        return [*super().check(**kwargs), *self._check_str_default_value()]\n+        return [\n+            *super().check(**kwargs),\n+            *self._check_str_default_value(),\n+            *self._check_choices_max_length(),\n+        ]\n \n     def _check_str_default_value(self):\n         if self.has_default() and isinstance(self.default, str):\n"
+  },
+  "django__django-12700": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-12700",
+    "model_patch": "diff --git a/django/views/debug.py b/django/views/debug.py\nindex e6b7d4d821..368ac457e6 100644\n--- a/django/views/debug.py\n+++ b/django/views/debug.py\n@@ -90,6 +90,8 @@ class SafeExceptionReporterFilter:\n                 cleansed = self.cleansed_substitute\n             elif isinstance(value, dict):\n                 cleansed = {k: self.cleanse_setting(k, v) for k, v in value.items()}\n+            elif isinstance(value, (list, tuple)):\n+                cleansed = type(value)(self.cleanse_setting(key, item) for item in value)\n             else:\n                 cleansed = value\n         except TypeError:\n"
+  },
+  "astropy__astropy-12907": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "astropy__astropy-12907",
+    "model_patch": "--- a/astropy/modeling/separable.py\n+++ b/astropy/modeling/separable.py\n@@ -242,7 +242,7 @@\n         cright = _coord_matrix(right, 'right', noutp)\n     else:\n         cright = np.zeros((noutp, right.shape[1]))\n-        cright[-right.shape[0]:, -right.shape[1]:] = 1\n+        cright[-right.shape[0]:, -right.shape[1]:] = right\n \n     return np.hstack([cleft, cright])\n"
+  },
+  "django__django-11905": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11905",
+    "model_patch": "diff --git a/django/db/models/lookups.py b/django/db/models/lookups.py\nindex 9344979c56..0be3ebf94b 100644\n--- a/django/db/models/lookups.py\n+++ b/django/db/models/lookups.py\n@@ -461,6 +461,13 @@ class Range(FieldGetDbPrepValueIterableMixin, BuiltinLookup):\n class IsNull(BuiltinLookup):\n     lookup_name = 'isnull'\n     prepare_rhs = False\n+    def __init__(self, lhs, rhs):\n+        if not isinstance(rhs, bool) and rhs is not None:\n+            raise ValueError(\n+                \"The QuerySet value for an 'isnull' lookup must be True or False.\"\n+            )\n+        super().__init__(lhs, rhs)\n+\n \n     def as_sql(self, compiler, connection):\n         sql, params = compiler.compile(self.lhs)\n"
+  },
+  "django__django-12983": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-12983",
+    "model_patch": "diff --git a/django/utils/text.py b/django/utils/text.py\nindex fb5f6298c4..3ba4bbb3f4 100644\n--- a/django/utils/text.py\n+++ b/django/utils/text.py\n@@ -403,7 +403,7 @@ def slugify(value, allow_unicode=False):\n     else:\n         value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')\n     value = re.sub(r'[^\\w\\s-]', '', value.lower()).strip()\n-    return re.sub(r'[-\\s]+', '-', value)\n+    return re.sub(r'[-\\s]+', '-', value).strip('-_')\n \n \n def camel_case_to_spaces(value):\n"
+  },
+  "django__django-11797": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-11797",
+    "model_patch": "diff --git a/django/db/models/sql/compiler.py b/django/db/models/sql/compiler.py\nindex e287a6f55a..055ff43a23 100644\n--- a/django/db/models/sql/compiler.py\n+++ b/django/db/models/sql/compiler.py\n@@ -107,10 +107,11 @@ class SQLCompiler:\n         # Note that even if the group_by is set, it is only the minimal\n         # set to group by. So, we need to add cols in select, order_by, and\n         # having into the select in any case.\n-        for expr, _, _ in select:\n-            cols = expr.get_group_by_cols()\n-            for col in cols:\n-                expressions.append(col)\n+        if not self.query.is_sliced:\n+            for expr, _, _ in select:\n+                cols = expr.get_group_by_cols()\n+                for col in cols:\n+                    expressions.append(col)\n         for expr, (sql, params, is_ref) in order_by:\n             # Skip References to the select clause, as all expressions in the\n             # select clause are already part of the group by.\n"
+  },
+  "django__django-12747": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-12747",
+    "model_patch": "diff --git a/django/db/models/query.py b/django/db/models/query.py\nindex d9c9b0db04..cdec983e57 100644\n--- a/django/db/models/query.py\n+++ b/django/db/models/query.py\n@@ -735,6 +735,9 @@ class QuerySet:\n         collector.collect(del_query)\n         deleted, _rows_count = collector.delete()\n \n+\n+        # Ensure the primary model is in the result even if 0 objects were deleted.\n+        _rows_count.setdefault(self.model._meta.label, 0)\n         # Clear the result cache, in case this QuerySet gets reused.\n         self._result_cache = None\n         return deleted, _rows_count\n"
+  },
+  "django__django-13321": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13321",
+    "model_patch": "diff --git a/django/contrib/sessions/backends/base.py b/django/contrib/sessions/backends/base.py\nindex 187e14b1b7..cbdacd2c16 100644\n--- a/django/contrib/sessions/backends/base.py\n+++ b/django/contrib/sessions/backends/base.py\n@@ -132,8 +132,8 @@ class SessionBase:\n \n     def _legacy_decode(self, session_data):\n         # RemovedInDjango40Warning: pre-Django 3.1 format will be invalid.\n-        encoded_data = base64.b64decode(session_data.encode('ascii'))\n         try:\n+            encoded_data = base64.b64decode(session_data.encode('ascii'))\n             # could produce ValueError if there is no ':'\n             hash, serialized = encoded_data.split(b':', 1)\n             expected_hash = self._hash(serialized)\n"
+  },
+  "django__django-12589": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-12589",
+    "model_patch": ""
+  },
+  "django__django-13551": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13551",
+    "model_patch": "diff --git a/django/contrib/auth/tokens.py b/django/contrib/auth/tokens.py\nindex 93e2d71af2..472381986a 100644\n--- a/django/contrib/auth/tokens.py\n+++ b/django/contrib/auth/tokens.py\n@@ -94,7 +94,8 @@ class PasswordResetTokenGenerator:\n         # Truncate microseconds so that tokens are consistent even if the\n         # database doesn't support microseconds.\n         login_timestamp = '' if user.last_login is None else user.last_login.replace(microsecond=0, tzinfo=None)\n-        return str(user.pk) + user.password + str(login_timestamp) + str(timestamp)\n+        email = getattr(user, user.get_email_field_name(), \"\") or \"\"\n+        return str(user.pk) + user.password + str(login_timestamp) + str(timestamp) + str(email)\n \n     def _num_seconds(self, dt):\n         return int((dt - datetime(2001, 1, 1)).total_seconds())\n"
+  },
+  "django__django-13448": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13448",
+    "model_patch": "diff --git a/django/db/backends/base/creation.py b/django/db/backends/base/creation.py\nindex 503f7f56fd..33368588a5 100644\n--- a/django/db/backends/base/creation.py\n+++ b/django/db/backends/base/creation.py\n@@ -74,7 +74,7 @@ class BaseDatabaseCreation:\n         # and store it on the connection. This slightly horrific process is so people\n         # who are testing on databases without transactions or who are using\n         # a TransactionTestCase still get a clean database on every test run.\n-        if serialize:\n+        if serialize and self.connection.settings_dict[\"TEST\"].get(\"MIGRATE\", True):\n             self.connection._test_serialized_contents = self.serialize_db_to_string()\n \n         call_command('createcachetable', database=self.connection.alias)\n"
+  },
+  "django__django-13158": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13158",
+    "model_patch": "diff --git a/django/db/models/sql/compiler.py b/django/db/models/sql/compiler.py\nindex 686e75c979..2c8fc8b366 100644\n--- a/django/db/models/sql/compiler.py\n+++ b/django/db/models/sql/compiler.py\n@@ -496,6 +496,8 @@ class SQLCompiler:\n         refcounts_before = self.query.alias_refcount.copy()\n         try:\n             extra_select, order_by, group_by = self.pre_sql_setup()\n+            if self.query.is_empty():\n+                raise EmptyResultSet\n             for_update_part = None\n             # Is a LIMIT/OFFSET clause needed?\n             with_limit_offset = with_limits and (self.query.high_mark is not None or self.query.low_mark)\n"
+  },
+  "django__django-13660": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13660",
+    "model_patch": "diff --git a/django/core/management/commands/shell.py b/django/core/management/commands/shell.py\nindex 2b306a579e..571d120467 100644\n--- a/django/core/management/commands/shell.py\n+++ b/django/core/management/commands/shell.py\n@@ -84,13 +84,13 @@ class Command(BaseCommand):\n     def handle(self, **options):\n         # Execute the command and exit.\n         if options['command']:\n-            exec(options['command'])\n+            exec(options['command'], {})\n             return\n \n         # Execute stdin if it has anything to read and exit.\n         # Not supported on Windows due to select.select() limitations.\n         if sys.platform != 'win32' and not sys.stdin.isatty() and select.select([sys.stdin], [], [], 0)[0]:\n-            exec(sys.stdin.read())\n+            exec(sys.stdin.read(), {})\n             return\n \n         available_shells = [options['interface']] if options['interface'] else self.shells\n"
+  },
+  "django__django-13315": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13315",
+    "model_patch": "--- a/django/forms/models.py\n+++ b/django/forms/models.py\n@@ -100,5 +100,5 @@\n     if hasattr(formfield, 'queryset') and hasattr(formfield, 'get_limit_choices_to'):\n         limit_choices_to = formfield.get_limit_choices_to()\n         if limit_choices_to is not None:\n-            formfield.queryset = formfield.queryset.complex_filter(limit_choices_to)\n+            formfield.queryset = formfield.queryset.complex_filter(limit_choices_to).distinct()\n"
+  },
+  "django__django-13768": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13768",
+    "model_patch": "diff --git a/django/dispatch/dispatcher.py b/django/dispatch/dispatcher.py\nindex b7d9d26389..0563c9d2a4 100644\n--- a/django/dispatch/dispatcher.py\n+++ b/django/dispatch/dispatcher.py\n@@ -1,3 +1,4 @@\n+import logging\n import threading\n import warnings\n import weakref\n@@ -14,6 +15,8 @@ def _make_id(target):\n \n NONE_ID = _make_id(None)\n \n+logger = logging.getLogger(\"django.dispatch\")\n+\n # A marker for caching\n NO_RECEIVERS = object()\n \n@@ -208,6 +211,7 @@ class Signal:\n             try:\n                 response = receiver(signal=self, sender=sender, **named)\n             except Exception as err:\n+                logger.exception(\"Error calling %s in Signal.send_robust()\", receiver)\n                 responses.append((receiver, err))\n             else:\n                 responses.append((receiver, response))\n"
+  },
+  "django__django-13710": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13710",
+    "model_patch": "diff --git a/django/contrib/admin/options.py b/django/contrib/admin/options.py\nindex dadd4acfa1..84a9873e58 100644\n--- a/django/contrib/admin/options.py\n+++ b/django/contrib/admin/options.py\n@@ -2040,7 +2040,14 @@ class InlineModelAdmin(BaseModelAdmin):\n         if self.verbose_name is None:\n             self.verbose_name = self.model._meta.verbose_name\n         if self.verbose_name_plural is None:\n-            self.verbose_name_plural = self.model._meta.verbose_name_plural\n+            if (\n+                self.__class__.verbose_name is not None and\n+                self.__class__.verbose_name_plural is None\n+            ):\n+                from django.utils.text import format_lazy\n+                self.verbose_name_plural = format_lazy('{}s', self.verbose_name)\n+            else:\n+                self.verbose_name_plural = self.model._meta.verbose_name_plural\n \n     @property\n     def media(self):\n"
+  },
+  "django__django-13265": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13265",
+    "model_patch": ""
+  },
+  "django__django-14155": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14155",
+    "model_patch": "diff --git a/django/urls/resolvers.py b/django/urls/resolvers.py\nindex 9b00e24509..a62f160cd6 100644\n--- a/django/urls/resolvers.py\n+++ b/django/urls/resolvers.py\n@@ -31,6 +31,11 @@ from .utils import get_callable\n \n class ResolverMatch:\n     def __init__(self, func, args, kwargs, url_name=None, app_names=None, namespaces=None, route=None, tried=None):\n+        while isinstance(func, functools.partial):\n+            args = func.args + args\n+            kwargs = {**func.keywords, **kwargs}\n+            func = func.func\n+\n         self.func = func\n         self.args = args\n         self.kwargs = kwargs\n@@ -54,7 +59,6 @@ class ResolverMatch:\n \n         view_path = url_name or self._func_path\n         self.view_name = ':'.join(self.namespaces + [view_path])\n-\n     def __getitem__(self, index):\n         return (self.func, self.args, self.kwargs)[index]\n \n"
+  },
+  "django__django-14534": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14534",
+    "model_patch": "diff --git a/django/forms/boundfield.py b/django/forms/boundfield.py\nindex 2ff8b0ee26..ac2e095dad 100644\n--- a/django/forms/boundfield.py\n+++ b/django/forms/boundfield.py\n@@ -277,7 +277,7 @@ class BoundWidget:\n \n     @property\n     def id_for_label(self):\n-        return 'id_%s_%s' % (self.data['name'], self.data['index'])\n+        return self.data[\"attrs\"].get(\"id\") or \"id_%s_%s\" % (self.data[\"name\"], self.data[\"index\"])\n \n     @property\n     def choice_label(self):\n"
+  },
+  "django__django-14016": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14016",
+    "model_patch": "diff --git a/django/db/models/query_utils.py b/django/db/models/query_utils.py\nindex c2623f099f..b815acd904 100644\n--- a/django/db/models/query_utils.py\n+++ b/django/db/models/query_utils.py\n@@ -38,6 +38,16 @@ class Q(tree.Node):\n     conditional = True\n \n     def __init__(self, *args, _connector=None, _negated=False, **kwargs):\n+        if args:\n+            args = tuple(\n+                list(arg) if isinstance(arg, (type({}.keys()), type({}.values()), type({}.items())))\n+                else arg for arg in args\n+            )\n+        if kwargs:\n+            kwargs = {\n+                k: (list(v) if isinstance(v, (type({}.keys()), type({}.values()), type({}.items()))) else v)\n+                for k, v in kwargs.items()\n+            }\n         super().__init__(children=[*args, *sorted(kwargs.items())], connector=_connector, negated=_negated)\n \n     def _combine(self, other, conn):\n"
+  },
+  "django__django-14915": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14915",
+    "model_patch": "diff --git a/django/forms/models.py b/django/forms/models.py\nindex 5dcf923c12..bc7e6959e7 100644\n--- a/django/forms/models.py\n+++ b/django/forms/models.py\n@@ -1171,6 +1171,9 @@ class ModelChoiceIteratorValue:\n             other = other.value\n         return self.value == other\n \n+    def __hash__(self):\n+        return hash(self.value)\n+\n \n class ModelChoiceIterator:\n     def __init__(self, field):\n"
+  },
+  "django__django-13757": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-13757",
+    "model_patch": "diff --git a/django/db/models/fields/json.py b/django/db/models/fields/json.py\nindex 29c6ff0926..ebe04e58eb 100644\n--- a/django/db/models/fields/json.py\n+++ b/django/db/models/fields/json.py\n@@ -368,12 +368,15 @@ class KeyTransformIsNull(lookups.IsNull):\n     def as_oracle(self, compiler, connection):\n         if not self.rhs:\n             return HasKey(self.lhs.lhs, self.lhs.key_name).as_oracle(compiler, connection)\n-        return super().as_sql(compiler, connection)\n+        sql, params = HasKey(self.lhs.lhs, self.lhs.key_name).as_oracle(compiler, connection)\n+        return 'NOT %s' % sql, params\n \n     def as_sqlite(self, compiler, connection):\n         if not self.rhs:\n             return HasKey(self.lhs.lhs, self.lhs.key_name).as_sqlite(compiler, connection)\n-        return super().as_sql(compiler, connection)\n+        return HasKey(self.lhs.lhs, self.lhs.key_name).as_sql(\n+            compiler, connection, template='JSON_TYPE(%s, %%s) IS NULL',\n+        )\n \n \n class KeyTransformIn(lookups.In):\n"
+  },
+  "django__django-14787": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14787",
+    "model_patch": "diff --git a/django/utils/decorators.py b/django/utils/decorators.py\nindex 5c9a5d01c7..8b9da17e31 100644\n--- a/django/utils/decorators.py\n+++ b/django/utils/decorators.py\n@@ -38,6 +38,7 @@ def _multi_decorate(decorators, method):\n         # 'func'. Also, wrap method.__get__() in a function because new\n         # attributes can't be set on bound method objects, only on functions.\n         bound_method = partial(method.__get__(self, type(self)))\n+        update_wrapper(bound_method, method)\n         for dec in decorators:\n             bound_method = dec(bound_method)\n         return bound_method(*args, **kwargs)\n"
+  },
+  "django__django-14017": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14017",
+    "model_patch": ""
+  },
+  "django__django-14855": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14855",
+    "model_patch": "diff --git a/django/contrib/admin/helpers.py b/django/contrib/admin/helpers.py\nindex dd154f72ee..35108cc359 100644\n--- a/django/contrib/admin/helpers.py\n+++ b/django/contrib/admin/helpers.py\n@@ -209,7 +209,7 @@ class AdminReadonlyField:\n             remote_field.model._meta.model_name,\n         )\n         try:\n-            url = reverse(url_name, args=[quote(remote_obj.pk)])\n+            url = reverse(url_name, args=[quote(remote_obj.pk)], current_app=self.model_admin.admin_site.name)\n             return format_html('<a href=\"{}\">{}</a>', url, remote_obj)\n         except NoReverseMatch:\n             return str(remote_obj)\n"
+  },
+  "django__django-15202": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-15202",
+    "model_patch": "diff --git a/django/core/validators.py b/django/core/validators.py\nindex 72fbe15551..1dab669895 100644\n--- a/django/core/validators.py\n+++ b/django/core/validators.py\n@@ -126,8 +126,13 @@ class URLValidator(RegexValidator):\n             else:\n                 raise\n         else:\n+            try:\n+                split_result = urlsplit(value)\n+            except ValueError:\n+                raise ValidationError(self.message, code=self.code, params={'value': value})\n+\n             # Now verify IPv6 in the netloc part\n-            host_match = re.search(r'^\\[(.+)\\](?::\\d{1,5})?$', urlsplit(value).netloc)\n+            host_match = re.search(r'^\\[(.+)\\](?::\\d{1,5})?$', split_result.netloc)\n             if host_match:\n                 potential_ip = host_match[1]\n                 try:\n@@ -139,7 +144,12 @@ class URLValidator(RegexValidator):\n         # section 3.1. It's defined to be 255 bytes or less, but this includes\n         # one byte for the length of the name and one byte for the trailing dot\n         # that's used to indicate absolute names in DNS.\n-        if len(urlsplit(value).hostname) > 253:\n+        try:\n+            hostname = urlsplit(value).hostname\n+        except ValueError:\n+            raise ValidationError(self.message, code=self.code, params={'value': value})\n+\n+        if hostname and len(hostname) > 253:\n             raise ValidationError(self.message, code=self.code, params={'value': value})\n \n \n"
+  },
+  "django__django-14999": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14999",
+    "model_patch": "diff --git a/django/db/migrations/operations/models.py b/django/db/migrations/operations/models.py\nindex 982816be3a..361ad72a61 100644\n--- a/django/db/migrations/operations/models.py\n+++ b/django/db/migrations/operations/models.py\n@@ -321,6 +321,8 @@ class RenameModel(ModelOperation):\n         if self.allow_migrate_model(schema_editor.connection.alias, new_model):\n             old_model = from_state.apps.get_model(app_label, self.old_name)\n             # Move the main table\n+            if old_model._meta.db_table == new_model._meta.db_table:\n+                return\n             schema_editor.alter_db_table(\n                 new_model,\n                 old_model._meta.db_table,\n"
+  },
+  "django__django-15061": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-15061",
+    "model_patch": "diff --git a/django/forms/widgets.py b/django/forms/widgets.py\nindex 00c19e2c55..e2d871647c 100644\n--- a/django/forms/widgets.py\n+++ b/django/forms/widgets.py\n@@ -848,10 +848,6 @@ class MultiWidget(Widget):\n         context['widget']['subwidgets'] = subwidgets\n         return context\n \n-    def id_for_label(self, id_):\n-        if id_:\n-            id_ += '_0'\n-        return id_\n \n     def value_from_datadict(self, data, files, name):\n         return [\n"
+  },
+  "django__django-15347": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-15347",
+    "model_patch": "diff --git a/django/contrib/messages/storage/cookie.py b/django/contrib/messages/storage/cookie.py\nindex 1d390c71dd..e48d4edb08 100644\n--- a/django/contrib/messages/storage/cookie.py\n+++ b/django/contrib/messages/storage/cookie.py\n@@ -19,7 +19,7 @@ class MessageEncoder(json.JSONEncoder):\n             # Using 0/1 here instead of False/True to produce more compact json\n             is_safedata = 1 if isinstance(obj.message, SafeData) else 0\n             message = [self.message_key, is_safedata, obj.level, obj.message]\n-            if obj.extra_tags:\n+            if obj.extra_tags is not None:\n                 message.append(obj.extra_tags)\n             return message\n         return super().default(obj)\n"
+  },
+  "django__django-14667": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-14667",
+    "model_patch": "diff --git a/django/db/models/sql/query.py b/django/db/models/sql/query.py\nindex 8837881579..47c26d10b7 100644\n--- a/django/db/models/sql/query.py\n+++ b/django/db/models/sql/query.py\n@@ -678,7 +678,7 @@ class Query(BaseExpression):\n         \"target\", and the model and list of fields being added for that model.\n         \"\"\"\n         field_names, defer = self.deferred_loading\n-        if not field_names:\n+        if not field_names and defer:\n             return\n         orig_opts = self.get_meta()\n         seen = {}\n"
+  },
+  "django__django-15790": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-15790",
+    "model_patch": "diff --git a/django/core/checks/templates.py b/django/core/checks/templates.py\nindex 5214276987..692ec98203 100644\n--- a/django/core/checks/templates.py\n+++ b/django/core/checks/templates.py\n@@ -50,15 +50,15 @@ def check_string_if_invalid_is_string(app_configs, **kwargs):\n @register(Tags.templates)\n def check_for_template_tags_with_the_same_name(app_configs, **kwargs):\n     errors = []\n-    libraries = defaultdict(list)\n+    libraries = defaultdict(set)\n \n     for conf in settings.TEMPLATES:\n         custom_libraries = conf.get(\"OPTIONS\", {}).get(\"libraries\", {})\n         for module_name, module_path in custom_libraries.items():\n-            libraries[module_name].append(module_path)\n+            libraries[module_name].add(module_path)\n \n     for module_name, module_path in get_template_tag_modules():\n-        libraries[module_name].append(module_path)\n+        libraries[module_name].add(module_path)\n \n     for library_name, items in libraries.items():\n         if len(items) > 1:\n@@ -66,7 +66,7 @@ def check_for_template_tags_with_the_same_name(app_configs, **kwargs):\n                 Error(\n                     E003.msg.format(\n                         repr(library_name),\n-                        \", \".join(repr(item) for item in items),\n+                        \", \".join(repr(item) for item in sorted(items)),\n                     ),\n                     id=E003.id,\n                 )\n"
+  },
+  "django__django-15695": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-15695",
+    "model_patch": ""
+  },
+  "django__django-15252": {
+    "model_name_or_path": "vertex_ai/gemini-3-flash-preview",
+    "instance_id": "django__django-15252",
+    "model_patch": ""
+  }
+}

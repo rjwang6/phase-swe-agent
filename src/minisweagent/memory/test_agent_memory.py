@@ -1,5 +1,8 @@
 import pytest
-from memory import AgentMemory
+# AgentMemory was renamed to LegacyAgentMemory when the memory package was
+# split into components/ and legacy/. Kept under the old name here so these
+# tests keep exercising the original behaviour.
+from minisweagent.memory.legacy.legacy_memory import LegacyAgentMemory as AgentMemory
 
 def test_reset(tmp_path):
     mem_file = tmp_path / "memory.txt"

@@ -36,6 +36,59 @@ class FakeModel:
     def get_template_vars(self, **kwargs):
         return {}
 
+    def format_message(self, role: str, content: str, extra: dict | None = None) -> dict:
+        msg = {"role": role, "content": content}
+        if extra is not None:
+            msg["extra"] = extra
+        return msg
+
+
+# ----------------------------
+# Minimal agent config
+# ----------------------------
+# AgentConfig requires every phase/memory prompt template. These tests only
+# exercise phase-switch control flow, never prompt rendering, so stub them.
+_REQUIRED_TEMPLATES = [
+    "distilled_memory_update_after_exploration_template",
+    "distilled_memory_update_after_validation_template",
+    "exploration_handoff_write_template",
+    "execution_report_write_template",
+    "exploration_scratchpad_write_template",
+    "execution_scratchpad_write_template",
+    "phase_memory_update_template",
+    "memory_write_template",
+    "memory_summarizer_template",
+    "exploration_system_template",
+    "exploration_instance_template",
+    "execution_system_template",
+    "execution_instance_template",
+    "validation_system_template",
+    "validation_instance_template",
+]
+
+
+class OfflineAgent(DefaultAgent):
+    """DefaultAgent with the LLM-backed memory writer stubbed out.
+
+    Phase switches normally spend an API call writing the handoff and
+    distilled memory. These tests only assert on control flow, so the
+    generation seam is replaced with a deterministic string.
+    """
+
+    def _generate_memory_block(self, template, required_headers, **template_kwargs) -> str:
+        return "stub memory block"
+
+
+def make_agent(**overrides):
+    """Build an offline DefaultAgent with all required templates stubbed out."""
+    kwargs = {name: f"stub {name}" for name in _REQUIRED_TEMPLATES}
+    kwargs.update(
+        system_template="test system template",
+        instance_template="test instance template",
+        phase_recent_message_window=4,
+    )
+    kwargs.update(overrides)
+    return OfflineAgent(model=FakeModel(), env=LocalEnvironment(), **kwargs)
 
 # ----------------------------
 # Helper printing
@@ -134,12 +187,7 @@ def test_3_model_exposes_tools():
 def test_4_execute_action_switch_phase():
     print_header("TEST 4: direct execute_action() changes phase")
 
-    agent = DefaultAgent(
-        model=FakeModel(),
-        env=LocalEnvironment(),
-        system_template="test system template",
-        instance_template="test instance template",
-    )
+    agent = make_agent()
 
     print("Initial phase:", agent.phase)
     assert agent.phase == Phase.EXPLORATION
@@ -166,12 +214,7 @@ def test_4_execute_action_switch_phase():
 def test_5_execute_actions_switch_phase_message():
     print_header("TEST 5: execute_actions() processes switch_phase action list")
 
-    agent = DefaultAgent(
-        model=FakeModel(),
-        env=LocalEnvironment(),
-        system_template="test system template",
-        instance_template="test instance template",
-    )
+    agent = make_agent()
 
     fake_message = {
         "extra": {
@@ -204,12 +247,7 @@ def test_5_execute_actions_switch_phase_message():
 def test_6_mixed_switch_phase_and_bash():
     print_header("TEST 6: mixed switch_phase + bash actions")
 
-    agent = DefaultAgent(
-        model=FakeModel(),
-        env=LocalEnvironment(),
-        system_template="test system template",
-        instance_template="test instance template",
-    )
+    agent = make_agent()
 
     fake_message = {
         "extra": {

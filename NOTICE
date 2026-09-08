@@ -1,0 +1,14 @@
+phase-swe-agent
+Copyright (c) 2026 Ryan Wang
+
+This project is a research fork of mini-swe-agent
+(https://github.com/SWE-agent/mini-swe-agent), which is
+Copyright (c) 2025 Kilian A. Lieret and Carlos E. Jimenez
+and distributed under the MIT License. The upstream license is
+reproduced in full in LICENSE and applies to the original code.
+
+The phase-structured control flow and hierarchical memory system
+described in README.md are original work added on top of that base.
+They were built as a CS 224N course project at Stanford, jointly with
+Sameer Agrawal (https://github.com/agrawalsameer1); the phase and
+memory implementation in this repository is my own.

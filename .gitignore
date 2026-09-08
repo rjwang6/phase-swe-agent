@@ -1,0 +1,39 @@
+# --- Agent run artifacts (never commit; these bloated the original repo) ---
+/logs/
+/current_agent_memory/
+/token_stats/
+/trajectories/
+*.traj.json
+traj.json
+/preds.json
+/patch.txt
+/exit_statuses*.yaml
+
+# --- Secrets ---
+.env
+.env.*
+*.key
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Editors / OS ---
+.DS_Store
+.vscode/
+.idea/
+.cursor/
+.claude/

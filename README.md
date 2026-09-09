@@ -168,6 +168,18 @@ Each run writes per-step prompt logs to `logs/<task_id>/`, memory artifacts to `
 
 Requires Python ≥ 3.10.
 
+### Tests
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+441 tests pass, including the upstream suite. The phase and memory tests are
+`src/minisweagent/phases/test_phase_switch.py` and
+`src/minisweagent/memory/test_agent_memory.py`; they run offline, stubbing the
+LLM call that a phase switch would otherwise make.
+
 ---
 
 ## Limitations

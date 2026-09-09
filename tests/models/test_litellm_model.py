@@ -4,7 +4,7 @@ import pytest
 
 from minisweagent.exceptions import FormatError
 from minisweagent.models.litellm_model import LitellmModel, LitellmModelConfig
-from minisweagent.models.utils.actions_toolcall import BASH_TOOL
+from minisweagent.models.utils.actions_toolcall import BASH_TOOL, SWITCH_PHASE_TOOL
 
 
 class TestLitellmModelConfig:
@@ -36,7 +36,8 @@ class TestLitellmModel:
         model.query([{"role": "user", "content": "test"}])
 
         mock_completion.assert_called_once()
-        assert mock_completion.call_args.kwargs["tools"] == [BASH_TOOL]
+        # The phase-structured agent advertises switch_phase alongside bash.
+        assert mock_completion.call_args.kwargs["tools"] == [BASH_TOOL, SWITCH_PHASE_TOOL]
 
     @patch("minisweagent.models.litellm_model.litellm.completion")
     @patch("minisweagent.models.litellm_model.litellm.cost_calculator.completion_cost")
@@ -50,7 +51,9 @@ class TestLitellmModel:
 
         model = LitellmModel(model_name="gpt-4")
         result = model.query([{"role": "user", "content": "list files"}])
-        assert result["extra"]["actions"] == [{"command": "ls -la", "tool_call_id": "call_abc"}]
+        assert result["extra"]["actions"] == [
+            {"tool": "bash", "command": "ls -la", "tool_call_id": "call_abc"}
+        ]
 
     @patch("minisweagent.models.litellm_model.litellm.completion")
     @patch("minisweagent.models.litellm_model.litellm.cost_calculator.completion_cost")

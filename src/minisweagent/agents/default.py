@@ -34,43 +34,56 @@ from pprint import pformat
 MAXTOKENS = 4096
 
 class AgentConfig(BaseModel):
-    """Check the config files in minisweagent/config for example settings."""
+    """Check the config files in minisweagent/config for example settings.
 
-    distilled_memory_update_after_exploration_template: str
-    distilled_memory_update_after_validation_template: str
-    exploration_handoff_write_template: str
-    execution_report_write_template: str
-    exploration_scratchpad_write_template: str
-    execution_scratchpad_write_template: str
+    The phase and memory templates below all default to empty. An empty phase
+    template falls back to the plain `system_template`/`instance_template`, so
+    an agent constructed without them behaves like the unmodified base agent.
+    A full set of templates lives in `config/benchmarks/swebench.yaml`.
+    """
 
-    phase_memory_update_template: str
+    distilled_memory_update_after_exploration_template: str = ""
+    """Prompt for rewriting distilled task memory when leaving exploration."""
+    distilled_memory_update_after_validation_template: str = ""
+    """Prompt for rewriting distilled task memory when leaving validation."""
+    exploration_handoff_write_template: str = ""
+    """Prompt for writing the exploration -> execution handoff."""
+    execution_report_write_template: str = ""
+    """Prompt for writing the validation -> exploration report."""
+    exploration_scratchpad_write_template: str = ""
+    """Prompt for the within-phase exploration scratchpad (experimental)."""
+    execution_scratchpad_write_template: str = ""
+    """Prompt for the within-phase execution scratchpad (experimental)."""
+
+    phase_memory_update_template: str = ""
     """Template for updating agent phase memory."""
-    phase_recent_message_window: int
+    phase_recent_message_window: int = 4
     """Number of recent messages the agent can see verbatim."""
 
-    memory_write_template: str
+    memory_write_template: str = ""
     """Template for writing to agent memory."""
-    memory_summarizer_template: str
+    memory_summarizer_template: str = ""
     """Template for summarizing agent memory when it exceeds token limit."""
 
-    exploration_system_template: str
+    exploration_system_template: str = ""
     """System template used during exploration phase."""
-    exploration_instance_template: str
+    exploration_instance_template: str = ""
     """User/task template used during exploration phase."""
-    execution_system_template: str
+    execution_system_template: str = ""
     """System template used during execution phase."""
-    execution_instance_template: str
+    execution_instance_template: str = ""
     """User/task template used during execution phase."""
+    validation_system_template: str = ""
+    """System template used during validation phase."""
+    validation_instance_template: str = ""
+    """User/task template used during validation phase."""
 
-    validation_system_template: str
-    validation_instance_template: str
-    
     system_template: str
     """Template for the system message (the first message)."""
     instance_template: str
     """Template for the first user message specifying the task (the second message overall)."""
-    step_limit: int = 2
-    """Maximum number of steps the agent can take."""
+    step_limit: int = 0
+    """Maximum number of steps the agent can take. 0 means no limit."""
     cost_limit: float = 3.0
     """Stop agent after exceeding (!) this cost."""
     output_path: Path | None = None
@@ -85,14 +98,20 @@ class DefaultAgent:
         self.messages2: list[dict] = []
         self.model = model
         self.env = env
-        self.extra_template_vars = {}
+        # The instance template is re-rendered every step, not just in run(),
+        # so `task` has to be defined even if step() is driven directly.
+        self.extra_template_vars = {"task": ""}
         self.logger = logging.getLogger("agent")
         self.cost = 0.0
         self.n_calls = 0
 
         self.phase = Phase.EXPLORATION
 
-        self.task_id = instance_id
+        # Falling back to a random id keeps the per-task artifact paths below
+        # from collapsing onto their parent directory when no instance id is
+        # given (e.g. the interactive runner), which made writing the token
+        # stats fail with IsADirectoryError.
+        self.task_id = instance_id or uuid.uuid4().hex[:8]
         self.memory_dir = Path("current_agent_memory") / str(self.task_id)
         self.memory_dir.mkdir(parents=True, exist_ok=True)
 
@@ -179,10 +198,7 @@ class DefaultAgent:
                 self.save(self.config.output_path)
             if self.messages[-1].get("role") == "exit":
                 self._write_prompt_token_stats()
-                self.logger.info(
-                    "Final token count: %s",
-                    litellm.token_counter(model=self.model.config.model_name, messages=self.messages),
-                )
+                self.logger.info("Final token count: %s", self._count_tokens(self.messages))
                 break
 
         return self.messages[-1].get("extra", {})
@@ -235,15 +251,25 @@ class DefaultAgent:
 
         return prompt_messages
     
+    def _count_tokens(self, messages: list[dict]) -> int:
+        """Best-effort token count for `messages`.
+
+        litellm.token_counter raises on content shapes it does not recognise
+        (the response API's `input_text` items, for one). Token counting is
+        only instrumentation, so a failure here must not abort the run.
+        """
+        try:
+            return litellm.token_counter(model=self.model.config.model_name, messages=messages)
+        except Exception as e:
+            self.logger.debug("Token counting failed, recording 0: %s", e)
+            return 0
+
     def _record_prompt_token_stats(self, prompt_messages: list[dict]) -> int:
         """
         Count tokens for the final prompt built by _refresh_phase_prompts(),
         then update running average/max stats.
         """
-        prompt_tokens = litellm.token_counter(
-            model=self.model.config.model_name,
-            messages=prompt_messages,
-        )
+        prompt_tokens = self._count_tokens(prompt_messages)
         self.prompt_token_total += prompt_tokens
         self.prompt_token_count += 1
         self.prompt_token_max = max(self.prompt_token_max, prompt_tokens)
@@ -376,23 +402,34 @@ class DefaultAgent:
 
         return message
     
-    def _get_phase_templates(self):
-        if self.phase == Phase.EXPLORATION:
-            return (
+    def _get_phase_templates(self) -> tuple[str, str]:
+        """Return the (system, instance) templates for the current phase.
+
+        Falls back to the plain templates when a phase-specific one is unset,
+        so the agent still runs without a phase-aware config.
+        """
+        by_phase = {
+            Phase.EXPLORATION: (
                 self.config.exploration_system_template,
                 self.config.exploration_instance_template,
-            )
-        if self.phase == Phase.EXECUTION:
-            return (
+            ),
+            Phase.EXECUTION: (
                 self.config.execution_system_template,
                 self.config.execution_instance_template,
-            )
-        if self.phase == Phase.VALIDATION:
-            return (
+            ),
+            Phase.VALIDATION: (
                 self.config.validation_system_template,
                 self.config.validation_instance_template,
-            )
-        raise ValueError(f"Unknown phase: {self.phase}")
+            ),
+        }
+        try:
+            system_template, instance_template = by_phase[self.phase]
+        except KeyError:
+            raise ValueError(f"Unknown phase: {self.phase}") from None
+        return (
+            system_template or self.config.system_template,
+            instance_template or self.config.instance_template,
+        )
 
     def step(self) -> list[dict] | None:
         old_phase = self.phase

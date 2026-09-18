@@ -9,6 +9,8 @@ reproduced in full in LICENSE and applies to the original code.
 
 The phase-structured control flow and hierarchical memory system
 described in README.md are original work added on top of that base.
-They were built as a CS 224N course project at Stanford, jointly with
-Sameer Agrawal (https://github.com/agrawalsameer1); the phase and
-memory implementation in this repository is my own.
+They were built as a CS 224N course project at Stanford with
+Sameer Agrawal (https://github.com/agrawalsameer1) and Jerry Wang.
+Per the report's contribution statement, the base Phase Memory
+framework in this repository is my implementation; the reported
+experiments are the team's joint work.

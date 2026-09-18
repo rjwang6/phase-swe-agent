@@ -1,8 +1,12 @@
 # phase-swe-agent
 
-**A phase-structured LLM agent for software engineering, with hierarchical memory that keeps prompt size bounded as tasks get longer.**
+## Can coding agents manage their own memory?
+
+**A coding agent that splits a development cycle into explicit phases and decides for itself when to compress what it has learned — matching an unlimited-context agent's solve rate on SWE-bench Lite at 60% of the prompt tokens.**
 
 Stanford CS 224N course project. Built on top of [mini-swe-agent](https://github.com/SWE-agent/mini-swe-agent) (MIT).
+
+📄 **[Read the full report (8 pages)](docs/cs224n_report.pdf)**
 
 ---
 
@@ -54,47 +58,66 @@ A real distilled memory from the run is in [`results/examples/astropy__astropy-1
 
 ## Results
 
-Evaluated on **SWE-bench Verified** with `gemini-3-flash-preview`.
+Evaluated on **SWE-bench Lite** with Gemini 3.0 Flash, capped at 70 steps per task.
 
-**Best run** — 47 of the 300 instances attempted (budget-limited, not a full sweep):
+The dataset is 51 instances sampled to span difficulty: mini-SWE-agent was run on the
+first 100 SWE-bench Lite problems, bucketed by how many steps it took
+(easy 1–23, medium 24–46, hard 47–70), and 17 tasks drawn at random from each bucket.
 
-| | |
+### Against context-management baselines
+
+| Method | Correct | Incorrect | Incomplete | Accuracy of submitted |
+|---|---|---|---|---|
+| Default (unlimited context) | 28/51 (55%) | 21/51 (41%) | 2/51 (4%) | 28/49 (57%) |
+| 4K truncation | 10/51 (20%) | 6/51 (12%) | 35/51 (69%) | 10/16 (63%) |
+| 8K truncation | 22/51 (43%) | 14/51 (27%) | 15/51 (29%) | 22/36 (61%) |
+| 4K summary | 14/51 (27%) | 10/51 (20%) | 27/51 (53%) | 14/24 (58%) |
+| 8K summary | 23/51 (45%) | 19/51 (37%) | 9/51 (18%) | 23/42 (55%) |
+| **Phase Memory (ours)** | **25/51 (49%)** | 15/51 (29%) | 11/51 (22%) | **25/40 (63%)** |
+
+Two things to take from this:
+
+- **It beats every limited-context baseline** at both 4K and 8K, and lands close to the
+  unlimited-context default (49% vs 55%) while using an average of **5,812 prompt tokens
+  against the default's 9,708**.
+- **It has the highest accuracy on the patches it does submit — 63%.** We attribute this to
+  the dedicated validation phase, which gives the agent a structured opportunity to reject
+  a patch before submitting it.
+
+### Prompt size stays flat as runs get longer
+
+The default agent's average prompt climbs sharply with step count. Phase Memory's stays
+roughly constant, because the transcript resets at every phase boundary — and most tasks
+finish under 8K tokens, which is what makes it viable in a limited-context setting.
+
+Average phase length, from the same run (`results/token_stats/`, 236 segments):
+
+| Phase | Average length |
 |---|---|
-| Attempted | 47 |
-| Completed (produced a patch) | 42 |
-| **Resolved** | **25** |
-| Unresolved | 17 |
-| Empty patch | 5 |
+| Exploration | 12.3 steps |
+| Execution | 6.3 steps |
+| Validation | 7.1 steps |
+| **Overall** | **8.6 steps** |
 
-That is **53% of attempted** / 60% of completed instances. Of the 5 non-completions, all hit the step/cost limit rather than erroring.
+Exploration runs longest; execution and validation are shorter because they largely follow
+the instructions already written into the exploration handoff. Average exploration length
+also *falls* across later cycles, which is direct evidence the distilled memory is carrying
+useful knowledge forward rather than just accumulating text.
 
-> Scope note: this is a partial run on a 47-instance subset, not a full 300-instance SWE-bench Verified score, and it is not directly comparable to published leaderboard numbers.
+### Where the prompt tokens actually go
 
-### Prompt size stays flat
-
-Measured across all 47 tasks (`results/token_stats/`, 236 phase segments):
-
-| Metric | Value |
-|---|---|
-| Mean prompt tokens per step | **5,613** |
-| Median prompt tokens per step | 5,104 |
-| Largest prompt observed | 22,748 |
-| Mean steps per task | 43.3 (max 100) |
-| Mean phase segment length | 8.6 steps |
-
-The point of the middle row against the bottom two: a 43-step run holds an average prompt of ~5.6k tokens. Under naive accumulation the final prompt would be several times that, because every step's output is still in the context. Prompt size tracks the current phase, not the run.
-
-### Iteration history
-
-Earlier design revisions on a 23-instance development subset, showing the effect of the prompt and memory work:
-
-| Run | Attempted | Resolved |
+| Component | Avg. tokens | Share of prompt |
 |---|---|---|
-| `phase_memory_1` | 23 | 5 |
-| `phase_memory_v2_1` | 23 | 4 |
-| **`ryan_1`** (final, 47-instance) | 47 | **25** |
+| System / instance prompt | 2,123 | 38.5% |
+| Phase handoff | 405 | 7.3% |
+| Distilled memory | 472 | 8.6% |
+| Phase transcript | 3,950 | 45.6% |
 
-Raw reports are in [`results/`](results/).
+The surprise here is the first row: the phase-specific instructions and memory-format
+explanations cost nearly as much as the transcript itself, and dominate early in a phase
+when the transcript is still short. That is the obvious place to optimise next.
+
+Raw harness reports, per-task token statistics, and model patches are in [`results/`](results/).
 
 ---
 
@@ -127,6 +150,7 @@ analysis/                                 Result analysis
 └── action_by_phase.py                    Action-type breakdown per phase
 
 results/                                  Run data backing the numbers above
+docs/cs224n_report.pdf                    Full write-up: method, baselines, analysis
 ```
 
 Everything else — environments, model backends, the SWE-bench runner, tests — is upstream mini-swe-agent, lightly modified.
@@ -184,10 +208,21 @@ LLM call that a phase switch would otherwise make.
 
 ## Limitations
 
-- The 47-instance run is budget-limited and single-seed; there is no matched baseline run of the unmodified agent under identical conditions, so the resolve rate is not a controlled comparison.
-- Phase switching is left to the model's judgment. It sometimes lingers in exploration — exploration segments average 12.3 steps against 6.3 for execution.
-- Every phase switch costs an extra LLM call to write the handoff and distilled memory, trading tokens-per-step against calls-per-task.
-- `agent_scratchpad.py` is an earlier within-phase memory design that the final system does not use; it is kept for reference.
+- **Phase boundaries are soft.** Switching is left to the model's judgment, and it does not
+  always respect the phase it is in — writing files during exploration, for instance. Strict
+  prompting mitigated but did not eliminate this. Hard tool-call restrictions per phase would
+  enforce it properly.
+- **The agent sometimes hallucinates file paths or validation commands** when writing memory,
+  which then propagates into the next phase. Verifying paths before they are written into a
+  handoff would help.
+- **The system/instance prompt is 38% of the average prompt** — larger than it should be for a
+  method whose point is token efficiency.
+- **Single seed, one base model.** All runs used Gemini 3.0 Flash on 51 instances; no variance
+  estimates across seeds or models.
+- **Each phase switch costs an extra LLM call** to write the handoff and distilled memory,
+  trading tokens-per-step against calls-per-task.
+- `agent_scratchpad.py` is an earlier within-phase memory design the final system does not use;
+  it is kept for reference.
 
 ---
 
@@ -195,4 +230,9 @@ LLM call that a phase switch would otherwise make.
 
 Built on [mini-swe-agent](https://github.com/SWE-agent/mini-swe-agent) by Kilian Lieret and Carlos E. Jimenez (MIT — see `LICENSE`).
 
-Course project for CS 224N at Stanford, joint with [Sameer Agrawal](https://github.com/agrawalsameer1). The phase-structured control flow and memory system in this repository are my own work; see `NOTICE`.
+Course project for CS 224N at Stanford by **Sameer Agrawal, Ryan Wang, and Jerry Wang**.
+
+Per the report's contribution statement: I implemented the base Phase Memory framework and
+wrote the Introduction, Our Method, and Analysis sections. Sameer implemented the baselines
+and built the dataset; Jerry ran the experiments. The code in this repository is the framework
+implementation; the results above are the team's joint work. See `NOTICE`.

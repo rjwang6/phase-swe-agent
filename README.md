@@ -2,7 +2,7 @@
 
 ## Can coding agents manage their own memory?
 
-**A coding agent that splits a development cycle into explicit phases and decides for itself when to compress what it has learned — matching an unlimited-context agent's solve rate on SWE-bench Lite at 60% of the prompt tokens.**
+**A coding agent that splits a development cycle into explicit phases and decides for itself when to compress what it has learned — landing within 6 points of an unlimited-context agent's solve rate on SWE-bench Lite at 60% of the prompt tokens.**
 
 Stanford CS 224N course project. Built on top of [mini-swe-agent](https://github.com/SWE-agent/mini-swe-agent) (MIT).
 
